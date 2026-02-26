@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAVKESH SINGH | AI ARCHITECT</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=JetBrains+Mono:wght@300;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #ffffff;
+            --accent-color: #00f3ff;
+            /* Cyber Cyan */
+            --secondary-color: #bc13fe;
+            /* Neon Purple */
+            --border-color: rgba(255, 255, 255, 0.1);
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --font-hero: 'Orbitron', sans-serif;
+            --font-ui: 'Rajdhani', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f0f0f0;
+            --text-color: #1a1a1a;
+            --accent-color: #0051ff;
+            --secondary-color: #ff0055;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --panel-bg: rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none !important;
+            /* We use custom cursor */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-ui);
+            overflow-x: hidden;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        /* --- 1. LOADER --- */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading-text {
+            font-family: var(--font-hero);
+            font-size: 1.5rem;
+            letter-spacing: 10px;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .loader-logs {
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            max-height: 150px;
+            overflow: hidden;
+            text-align: left;
+            width: 300px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column-reverse;
+            /* New logs at bottom */
+            gap: 5px;
+        }
+
+        .loader-logs div {
+            opacity: 0;
+            animation: fadeInLog 0.3s forwards;
+        }
+
+        @keyframes fadeInLog {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        .shutter {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: #000;
+            transition: transform 1.5s cubic-bezier(1, 0, 0, 1);
+        }
+
+        .shutter-left {
+            left: 0;
+            border-right: 1px solid var(--accent-color);
+        }
+
+        .shutter-right {
+            right: 0;
+            border-left: 1px solid var(--accent-color);
+        }
+
+        .loader-hide .shutter-left {
+            transform: translateX(-100%);
+        }
+
+        .loader-hide .shutter-right {
+            transform: translateX(100%);
+        }
+
+        .loader-hide .loading-text {
+            opacity: 0;
+        }
+
+        /* --- 2. BACKGROUND --- */
+        #webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 900;
+        }
+
+        /* --- 3. CUSTOM CURSOR --- */
+        .cursor-dot,
+        .cursor-circle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10000;
+            border-radius: 50%;
+        }
+
+        .cursor-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--accent-color);
+        }
+
+        .cursor-circle {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--accent-color);
+            transition: width 0.2s, height 0.2s, border-color 0.2s;
+        }
+
+        /* Hover State for Cursor */
+        body.hovering .cursor-circle {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 243, 255, 0.1);
+            border-color: var(--secondary-color);
+            mix-blend-mode: difference;
+        }
+
+        /* --- 4. UI ELEMENTS --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 30px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            mix-blend-mode: difference;
+        }
+
+        .logo {
+            font-family: var(--font-hero);
+            font-size: 1.5rem;
+            font-weight: 900;
+            user-select: none;
+        }
+
+        /* Theme Toggle */
+        .theme-switch {
+            width: 50px;
+            height: 25px;
+            background: rgba(128, 128, 128, 0.3);
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+        }
+
+        .theme-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 19px;
+            height: 19px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        [data-theme="light"] .theme-switch::after {
+            left: 27px;
+            background: var(--secondary-color);
+        }
+
+        /* MOBILE NAV */
+        .mobile-menu-btn {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .nav-links-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* NAV LINKS */
+        .nav-link {
+            color: var(--text-color);
+            text-decoration: none;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color);
+        }
+
+        .nav-link.active {
+            color: var(--accent-color);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--accent-color);
+        }
+
+        /* --- 5. SECTIONS --- */
+        section {
+            position: relative;
+            width: 100%;
+            padding: 0 5vw;
+        }
+
+        /* HERO */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .hero-content {
+            text-align: center;
+            transform-style: preserve-3d;
+        }
+
+        .glitch-title {
+            font-family: var(--font-hero);
+            font-size: 8vw;
+            line-height: 0.9;
+            text-transform: uppercase;
+            position: relative;
+            color: var(--text-color);
+            mix-blend-mode: difference;
+        }
+
+        .hero-badge {
+            font-family: var(--font-code);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 15px;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        /* COLLAPSIBLE ARCHIVES SECTION */
+        .archive-section {
+            padding: 80px 5vw;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .archive-toggle-btn {
+            display: block;
+            margin: 0 auto 40px auto;
+            font-family: var(--font-code);
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--accent-color);
+            padding: 14px 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .archive-toggle-btn:hover {
+            background: rgba(0, 243, 255, 0.15);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+
+        .archive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.6s ease, opacity 0.4s ease, margin 0.4s ease;
+        }
+
+        .archive-grid.expanded {
+            max-height: 8000px;
+            opacity: 1;
+        }
+
+        .archive-group-title {
+            grid-column: 1 / -1;
+            font-family: var(--font-hero);
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            text-align: center;
+            padding: 20px 0 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        .archive-group-title.personal {
+            color: var(--secondary-color);
+        }
+
+        /* Project Card (archive) */
+        .project-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 35px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .project-card:hover::before { opacity: 1; }
+
+        .p-category {
+            font-family: var(--font-code);
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .p-title {
+            font-family: var(--font-hero);
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .p-tech {
+            font-family: var(--font-code);
+            color: var(--accent-color);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tech-tag {
+            background: rgba(0, 243, 255, 0.08);
+            border: 1px solid rgba(0, 243, 255, 0.25);
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        .p-desc {
+            color: #aaa;
+            line-height: 1.6;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .p-impact {
+            border-top: 1px dashed var(--border-color);
+            padding-top: 15px;
+        }
+
+        .p-impact-title {
+            font-family: var(--font-code);
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .p-impact ul { list-style: none; padding: 0; }
+
+        .p-impact li {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 15px;
+            line-height: 1.4;
+        }
+
+        .p-impact li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-family: var(--font-code);
+        }
+
+        /* SKILLS (Charts) */
+        .skills-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 100px 0;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 80vw;
+            max-width: 600px;
+            height: 600px;
+            margin-top: 50px;
+        }
+
+        /* CONTACT */
+        .contact-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .magnetic-btn {
+            font-family: var(--font-hero);
+            font-size: 3rem;
+            color: var(--text-color);
+            text-decoration: none;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .magnetic-btn:hover {
+            color: var(--secondary-color);
+            letter-spacing: 5px;
+        }
+
+        /* EASTER EGG MODAL */
+        .god-mode-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: #0f0;
+            z-index: 20000;
+            display: none;
+            font-family: var(--font-code);
+            padding: 50px;
+            overflow: hidden;
+        }
+
+        /* 3.5 CORE PROTOCOLS (Formerly logs) */
+        .logs-section {
+            padding: 100px 5vw;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .protocols-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .protocol-card {
+            background: rgba(20, 20, 25, 0.7);
+            border: 1px solid var(--border-color);
+            padding: 50px 40px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .protocol-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-color);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+            transform-origin: bottom;
+        }
+
+        .protocol-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .protocol-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .protocol-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 25px;
+        }
+
+        .protocol-title {
+            font-family: var(--font-hero);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        .protocol-desc {
+            font-family: var(--font-ui);
+            font-size: 1.1rem;
+            color: #aaa;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 20px;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-links-container {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                flex-direction: column;
+                background: rgba(5, 5, 5, 0.95);
+                padding: 20px;
+                border-bottom: 1px solid var(--border-color);
+                transform: translateY(-150%);
+                transition: 0.3s;
+            }
+
+            .nav-links-container.active {
+                transform: translateY(0);
+            }
+
+            .nav-link {
+                font-size: 1.2rem;
+                margin: 10px 0;
+            }
+
+            .glitch-title {
+                font-size: 15vw;
+            }
+
+            .hero p {
+                font-size: 1rem;
+                padding: 0 20px;
+            }
+
+            .archive-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .archive-group-title {
+                font-size: 1.4rem;
+            }
+
+            .chart-container {
+                width: 100%;
+                height: 300px;
+            }
+
+            .timeline-node {
+                width: 100% !important;
+                left: 0 !important;
+                text-align: left !important;
+                border: none !important;
+                border-left: 2px solid var(--accent-color) !important;
+                padding-left: 30px;
+                margin-bottom: 30px;
+            }
+
+            .timeline-line {
+                left: 0;
+            }
+
+            .telemetry-card {
+                width: 45%;
+                min-width: auto;
+                padding: 15px;
+            }
+
+            .t-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* --- 6. TIMELINE --- */
+        .timeline-section {
+            padding: 100px 10vw;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 50px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, var(--accent-color), transparent);
+            transform: translateX(-50%);
+        }
+
+        .timeline-node {
+            position: relative;
+            width: 50%;
+            padding: 20px 40px;
+            box-sizing: border-box;
+            opacity: 1;
+        }
+
+        .timeline-node:nth-child(odd) {
+            left: 0;
+            text-align: right;
+            border-right: 1px solid rgba(0, 243, 255, 0.3);
+        }
+
+        .timeline-node:nth-child(even) {
+            left: 50%;
+            text-align: left;
+            border-left: 1px solid rgba(188, 19, 254, 0.3);
+        }
+
+        .timeline-date {
+            font-family: var(--font-code);
+            color: var(--accent-color);
+            margin-bottom: 5px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .timeline-title {
+            font-family: var(--font-hero);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .timeline-desc {
+            color: #888;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* --- 7. HOLO FORM --- */
+        .holo-form {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(10, 10, 10, 0.8);
+            padding: 50px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            margin-top: 50px;
+        }
+
+        .holo-form::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg, var(--accent-color), transparent, var(--secondary-color));
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .holo-input-group {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .holo-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-family: var(--font-code);
+            font-size: 1.2rem;
+            padding: 10px 0;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .holo-input:focus {
+            border-bottom-color: var(--accent-color);
+            box-shadow: 0 5px 10px -5px var(--accent-color);
+        }
+
+        .holo-label {
+            position: absolute;
+            left: 0;
+            top: 10px;
+            color: #666;
+            font-family: var(--font-code);
+            transition: 0.3s;
+            pointer-events: none;
+        }
+
+        .holo-input:focus~.holo-label,
+        .holo-input:valid~.holo-label {
+            top: -20px;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+        }
+
+        .holo-btn {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            font-family: var(--font-hero);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .holo-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-color);
+            transition: 0.3s;
+            z-index: -1;
+        }
+
+        .holo-btn:hover {
+            color: #000;
+            box-shadow: 0 0 20px var(--accent-color);
+        }
+
+        .holo-btn:hover::before {
+            left: 0;
+        }
+
+        /* --- 8. SOUND TOGGLE --- */
+        .sound-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+            background: var(--panel-bg);
+            color: var(--text-color);
+            transition: 0.3s;
+            backdrop-filter: blur(5px);
+        }
+
+        .sound-toggle:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        /* --- 9. MODAL STYLES --- */
+        .project-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 15000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .project-modal.active {
+            opacity: 1;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 800px;
+            background: var(--bg-color);
+            border: 1px solid var(--accent-color);
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            color: #888;
+            font-size: 1.2rem;
+        }
+
+        .close-modal:hover {
+            color: var(--accent-color);
+        }
+
+        .modal-impact-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .modal-impact-list li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+            font-family: var(--font-ui);
+            color: #ccc;
+        }
+
+        .modal-impact-list li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+
+        /* --- 10. TELEMETRY STYLES --- */
+        .telemetry-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 150px;
+            transition: 0.3s;
+        }
+
+        .telemetry-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
+        }
+
+        .t-label {
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .t-value {
+            font-family: var(--font-hero);
+            font-size: 2rem;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+
+<body class="hover-target">
+
+    <!-- ADDED: LOADING SCREEN HTML -->
+    <div class="loader-container" id="loader">
+        <div class="loading-text"><span id="load-percent">0</span>% INITIALIZING</div>
+        <div class="loader-logs" id="loader-logs">
+            <!-- Dynamic logs will appear here -->
+        </div>
+        <div class="shutter shutter-left"></div>
+        <div class="shutter shutter-right"></div>
+    </div>
+
+    <!-- WebGL Background -->
+    <canvas id="webgl-canvas"></canvas>
+    <div class="scanlines"></div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="logo hover-trigger" id="logo-trigger">LAVKESH.AI</div>
+
+        <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+
+        <div class="nav-links-container" id="nav-menu">
+            <a href="index4.html" class="nav-link active hover-trigger">HOME</a>
+            <a href="#archives" class="nav-link hover-trigger">ARCHIVES (PROJECTS)</a>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-family: var(--font-code); font-size: 0.8rem;">THEME</span>
+                <div class="theme-switch hover-trigger" id="theme-toggle"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- God Mode Terminal -->
+    <div class="god-mode-modal" id="god-mode">
+        <h1>GOD MODE ACTIVATED</h1>
+        <p>> ACCESSING KERNEL...</p>
+        <p>> UNLOCKING ALL SECRETS...</p>
+        <p>> INFINITE KNOWLEDGE GRANTED.</p>
+        <div style="margin-top: 20px; color: white; cursor: pointer;"
+            onclick="document.getElementById('god-mode').style.display='none'">[CLOSE TERMINAL]</div>
+    </div>
+
+    <!-- PROJECT MODAL -->
+    <div class="project-modal" id="project-modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeProject()">[CLOSE]</div>
+            <h2 id="m-title" style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 10px;">PROJECT TITLE
+            </h2>
+            <p id="m-tech" style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 30px;">//
+                TECH STACK</p>
+
+            <h3 style="font-family: var(--font-ui); font-weight: bold; margin-bottom: 10px;">THE MISSION</h3>
+            <p id="m-desc" style="line-height: 1.6; color: #aaa; margin-bottom: 30px;">Description goes here...</p>
+
+            <h3 style="font-family: var(--font-ui); font-weight: bold; margin-bottom: 10px;">IMPACT METRICS</h3>
+            <ul id="m-impact" class="modal-impact-list">
+                <!-- Impact items -->
+            </ul>
+
+            <div style="margin-top: 40px; text-align: right;">
+                <a href="#" class="magnetic-btn" style="font-size: 1.2rem;">VIEW SOURCE >></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main>
+
+        <!-- 1. HERO -->
+        <section class="hero">
+            <div class="hero-content" data-tilt>
+                <h1 class="glitch-title hover-trigger">LAVKESH<br>SINGH</h1>
+                <p
+                    style="margin-top: 20px; font-size: 1.5rem; color: var(--accent-color); font-family: var(--font-code);">
+                    Staff Solution Engineer | Cloud AI Engineer | Agentic AI Expert
+                </p>
+                <p style="max-width: 600px; margin: 30px auto; line-height: 1.6; color: #888;">
+                    Agentic AI Architect at Oracle. I design autonomous systems,
+                    complex SQL architectures, and scalable cloud-native applications
+                    integrating GenAI with enterprise workflows.
+                </p>
+            </div>
+        </section>
+
+        <!-- 1.5 ENGINEERING TELEMETRY -->
+        <section style="padding: 50px 10vw; display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+            <div class="telemetry-card">
+                <div class="t-label">AGENTS BUILT</div>
+                <div class="t-value">20+</div>
+            </div>
+            <div class="telemetry-card">
+                <div class="t-label">PROJECTS DELIVERED</div>
+                <div class="t-value">50+</div>
+            </div>
+            <div class="telemetry-card">
+                <div class="t-label">CURRENT STATUS</div>
+                <div class="t-value" style="color: var(--secondary-color);">BUILDING AGENTS</div>
+            </div>
+            <div class="telemetry-card">
+                <div class="t-label">ENTERPRISE DEPLOYMENTS</div>
+                <div class="t-value">100+</div>
+            </div>
+        </section>
+
+        <!-- 2. STORY (Narrative) -->
+        <section style="padding: 100px 10vw; text-align: center;">
+            <h2 style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 50px;">THE MISSION</h2>
+            <p class="reveal-text" style="font-size: 2rem; line-height: 1.5; color: var(--text-color);">
+                I help enterprises modernize mission‑critical systems with secure, scalable cloud and AI solutions.
+                My focus is building production‑grade architectures that connect data platforms, intelligent
+                automation, and user‑centric applications. At <strong>Oracle</strong>, I deliver outcomes with
+                <strong>APEX</strong>, <strong>OCI</strong>, and <strong>GenAI</strong>—prioritizing reliability,
+                governance,
+                and measurable business impact.
+            </p>
+        </section>
+
+        <!-- 3.5 CORE PROTOCOLS -->
+        <section class="logs-section" id="logs">
+            <h2
+                style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 10px; text-align: center; color: var(--text-color);">
+                CORE PROTOCOLS</h2>
+            <p
+                style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 60px; text-align: center; font-size: 1.2rem;">
+                // PRIMARY ARCHITECTURAL DIRECTIVES</p>
+
+            <div class="protocols-grid">
+                <!-- Protocol 1 -->
+                <div class="protocol-card hover-trigger" data-tilt>
+                    <i class="fa-solid fa-brain protocol-icon"></i>
+                    <h3 class="protocol-title">AGENTIC AI ORCHESTRATION</h3>
+                    <p class="protocol-desc">Architecting autonomous agent swarms and enterprise tools. Leveraging LLMs,
+                        MCP integrations, and complex algorithmic reasoning to automate critical business workflows and
+                        decision-making.</p>
+                </div>
+
+                <!-- Protocol 2 -->
+                <div class="protocol-card hover-trigger" data-tilt>
+                    <i class="fa-solid fa-network-wired protocol-icon"></i>
+                    <h3 class="protocol-title">ENTERPRISE CLOUD ENGINEERING</h3>
+                    <p class="protocol-desc">Designing highly scalable, secure, and fault-tolerant cloud
+                        infrastructures. Executing seamless enterprise data migrations and optimizing high-concurrency
+                        architectures on Oracle Cloud (OCI).</p>
+                </div>
+
+                <!-- Protocol 3 -->
+                <div class="protocol-card hover-trigger" data-tilt>
+                    <i class="fa-solid fa-database protocol-icon"></i>
+                    <h3 class="protocol-title">FULL-STACK DATA APPLICATIONS</h3>
+                    <p class="protocol-desc">Transforming raw enterprise data into highly performant, real-time
+                        visualization platforms. Building complex workflow applications fusing Oracle APEX,
+                        sophisticated SQL, and generative AI engines.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3.7 COLLAPSIBLE ARCHIVES -->
+        <section class="archive-section" id="archives">
+            <h2 style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 10px; text-align: center;">ARCHIVES</h2>
+            <p style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 40px; text-align: center; font-size: 1.1rem;">// COMPLETE PROJECT REPOSITORY</p>
+            <button class="archive-toggle-btn" id="archiveToggle" onclick="toggleArchives()">▶ EXPAND ARCHIVES</button>
+            <div class="archive-grid" id="archiveGrid">
+
+                <div class="archive-group-title">ENTERPRISE ARCHITECTURES</div>
+
+                <article class="project-card">
+                    <div class="p-category">ENTERPRISE AGENTS // AI SALES</div>
+                    <h3 class="p-title">AI-Powered Automobile Chatbot</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle ODA</span><span class="tech-tag">GenAI</span><span class="tech-tag">Sarvam AI</span><span class="tech-tag">Oracle APEX</span></div>
+                    <p class="p-desc">A multilingual voice-enabled chatbot bridging the gap between dealerships and customers. Processes native Indian languages to generate leads, book services, and populate a live APEX dashboard for dealers in real-time.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Eliminates language barriers in tier-2/3 cities using Sarvam ASR/TTS.</li><li>Saves dealerships manual lead entry via Autonomous Database integration.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">RISK MANAGEMENT // RAILWAYS</div>
+                    <h3 class="p-title">CRIS Incident Dashboard</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">JavaScript</span><span class="tech-tag">Railway UI</span></div>
+                    <p class="p-desc">A specialized enterprise risk and incident dashboard built for the Center for Railway Information Systems. Features interactive risk mapping and custom Railway-themed UI components.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Consolidated fragmented rail incidents into a single pane of glass.</li><li>Custom JS map integrations for pinpointing incidents.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">AGENTIC AI // MCP</div>
+                    <h3 class="p-title">Enterprise MCP Server Suite</h3>
+                    <div class="p-tech"><span class="tech-tag">Python</span><span class="tech-tag">Model Context Protocol</span><span class="tech-tag">OCI</span></div>
+                    <p class="p-desc">A massive collection of custom Model Context Protocol servers integrating LLMs directly into secure environments. Includes servers for Oracle DB queries, Kubernetes namespaces, and browser automation.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Automated DB querying directly from natural language using custom SQLcl bridges.</li><li>Enabled AI swarms to manage k8s cloud deployments.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">HEALTHCARE // LIFE SCIENCES</div>
+                    <h3 class="p-title">AI-Based Medical Research Platform</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">GenAI & Vector Search</span><span class="tech-tag">Data Science</span></div>
+                    <p class="p-desc">An end-to-end application supporting medical researchers throughout their lifecycle. Integrates Oracle Data Science for experimentation and a powerful RAG-based Vector Search for contextual retrieval.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Enabled natural language querying of complex medical data via Select AI.</li><li>Unified the researcher portal from registration to final submission.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">EDUCATION // DOCUMENT AI</div>
+                    <h3 class="p-title">AI University Assessment Platform</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">Vision AI</span><span class="tech-tag">Document Understanding</span></div>
+                    <p class="p-desc">A comprehensive platform streamlining student assessments. Processes uploaded scorecards and cover letters automatically using OCI Vision AI and Document Understanding.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Eliminated manual data entry for thousands of student applications.</li><li>Standardized candidate evaluation through unbiased LLM summarization.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">ENTERPRISE AGENTS // PLATFORM</div>
+                    <h3 class="p-title">Oracle Private Agent Factory</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">Podman/Docker</span><span class="tech-tag">LLMs</span></div>
+                    <p class="p-desc">A centralized autonomous zone built with Oracle APEX that empowers non-technical users to spawn specialized AI agents for enterprise workflows.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Democratized agent creation for citizen developers.</li><li>Integrated tightly with OCI GenAI for sovereign data compliance.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">PUBLIC SECTOR // AUTOMATION</div>
+                    <h3 class="p-title">Citizen Service Delivery (POC)</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">Cloud Infrastructure</span><span class="tech-tag">Workflow Automation</span></div>
+                    <p class="p-desc">Delivered a Proof of Concept for a government entity to digitize the issuance of Residence Certificates, replacing physical queues with a transparent online portal.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Reduced citizen wait times and bureaucratic friction.</li><li>Architected for massive scalability to handle state-wide traffic.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">ENERGY // TELEMETRY</div>
+                    <h3 class="p-title">AI World O&M Dashboard</h3>
+                    <div class="p-tech"><span class="tech-tag">Oracle APEX</span><span class="tech-tag">Data Visualization</span><span class="tech-tag">Sensor Integration</span></div>
+                    <p class="p-desc">A tactical Operations & Maintenance dashboard designed to aggregate and visualize complex OEM refinery data with predictive maintenance alerts.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Consolidated fragmented sensor telemetry into an executive overview.</li><li>Enabled predictive rather than reactive maintenance scheduling.</li></ul></div>
+                </article>
+
+                <div class="archive-group-title personal">PERSONAL PROJECTS & UTILITIES</div>
+
+                <article class="project-card">
+                    <div class="p-category">MACHINE LEARNING // CV</div>
+                    <h3 class="p-title">AI Image Detector App</h3>
+                    <div class="p-tech"><span class="tech-tag">Python</span><span class="tech-tag">Streamlit</span><span class="tech-tag">Hugging Face</span></div>
+                    <p class="p-desc">A local web application utilizing the AI-image-detector classification model to analyze user-uploaded images and determine the probability of them being AI-generated.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Runs locally without third-party API dependencies.</li><li>Provides exact confidence scoring (Real vs Artificial).</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">LLM WORKFLOWS // AUTOMATION</div>
+                    <h3 class="p-title">Autonomous Newsletter Generator</h3>
+                    <div class="p-tech"><span class="tech-tag">Python</span><span class="tech-tag">LLM APIs</span><span class="tech-tag">PDF Generation</span></div>
+                    <p class="p-desc">A scripted pipeline to batch process daily news articles, summarize them using LLMs, and generate beautifully formatted PDF newsletters without human intervention.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Automates hours of manual reading and curation daily.</li><li>Outputs distribution-ready PDF documents automatically.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">LLM PROXY // NETWORKING</div>
+                    <h3 class="p-title">OpenClaw Codex Proxy</h3>
+                    <div class="p-tech"><span class="tech-tag">Python</span><span class="tech-tag">Flask</span><span class="tech-tag">Cloudflare Tunnels</span></div>
+                    <p class="p-desc">A custom translation layer allowing standard OpenAI-compatible frontends to communicate directly with isolated Oracle Code Assist environments. Handled 130KB+ context windows.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Bypassed strict Linux kernel argument limits using streamed stdin execution.</li><li>Implemented flawless SSE streaming from a non-API CLI tool.</li></ul></div>
+                </article>
+
+                <article class="project-card">
+                    <div class="p-category">LOCAL AUTOMATION // MCP</div>
+                    <h3 class="p-title">Personal Agentic Workflows</h3>
+                    <div class="p-tech"><span class="tech-tag">Python</span><span class="tech-tag">Model Context Protocol</span><span class="tech-tag">Bash</span></div>
+                    <p class="p-desc">A suite of custom, locally hosted MCP servers and shell scripts allowing local LLMs to manage personal infrastructure, including email processing, file system mutation, and automated web crawling.</p>
+                    <div class="p-impact"><div class="p-impact-title">IMPACT:</div><ul><li>Transforms passive chat interfaces into active workflow executors.</li><li>Secure sandboxing and approval flows via MCP proxy architecture.</li></ul></div>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- 4. DATA VISUALIZATION (Skills) -->
+        <section class="skills-section">
+            <h2 style="font-family: var(--font-hero); font-size: 3rem;">NEURAL ARSENAL</h2>
+            <div class="chart-container hover-trigger">
+                <canvas id="skillsChart"></canvas>
+            </div>
+        </section>
+
+        <!-- 5. TIMELINE (EXPERIENCE) -->
+        <section class="timeline-section" id="timeline">
+            <h2 style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 20px;">CHRONICLES</h2>
+            <p style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 40px;">// CAREER
+                HIGHLIGHTS & MAJOR DEPLOYMENTS</p>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+
+                <!-- Node 1 -->
+                <div class="timeline-node hover-trigger" data-tilt>
+                    <span class="timeline-date">2025 - PRESENT</span>
+                    <h3 class="timeline-title">STAFF SOLUTION ENGINEER</h3>
+                    <p class="timeline-desc">Leading agentic AI architecture at Oracle. Designing autonomous systems,
+                        complex SQL architectures, and scalable GenAI enterprise workflows.</p>
+                </div>
+
+                <!-- Node 2 -->
+                <div class="timeline-node hover-trigger" data-tilt>
+                    <span class="timeline-date">2022 - 2025</span>
+                    <h3 class="timeline-title">CLOUD ENGINEER - I</h3>
+                    <p class="timeline-desc">Architected AI-driven solutions at Oracle including the Agentic Workbench,
+                        and executed seamless enterprise cloud migrations to OCI.</p>
+                </div>
+
+                <!-- Node 3 -->
+                <div class="timeline-node hover-trigger" data-tilt>
+                    <span class="timeline-date">FEB 2022 - JUN 2022</span>
+                    <h3 class="timeline-title">SOFTWARE ENGINEER TRAINEE</h3>
+                    <p class="timeline-desc">Gained hands-on experience with enterprise software lifecycles and
+                        full-stack development at ONE BCG.</p>
+                </div>
+
+                <!-- Node 4 -->
+                <div class="timeline-node hover-trigger" data-tilt>
+                    <span class="timeline-date">2018 - 2022</span>
+                    <h3 class="timeline-title">B.TECH (INFORMATION TECHNOLOGY)</h3>
+                    <p class="timeline-desc">Completed Bachelor of Technology at University School of Information &
+                        Communication Technology (GGSIPU).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. CONTACT -->
+        <section class="contact-section" id="contact">
+            <h2 style="font-family: var(--font-hero); font-size: 3rem; margin-bottom: 20px;">ESTABLISH UPLINK</h2>
+            <p style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 30px;">SECURE CHANNEL
+                READY</p>
+
+            <div style="margin-top: 30px; display: flex; gap: 30px; align-items: center;">
+                <a href="https://www.linkedin.com/in/1lavkesh/" target="_blank" rel="noopener noreferrer" style="color: var(--text-color); transition: color 0.3s;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color='var(--text-color)'">
+                    <i class="fa-brands fa-linkedin fa-3x hover-trigger"></i>
+                </a>
+                <a href="https://github.com/lavkeshhhh" target="_blank" rel="noopener noreferrer" style="color: var(--text-color); transition: color 0.3s;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color='var(--text-color)'">
+                    <i class="fa-brands fa-github fa-3x hover-trigger"></i>
+                </a>
+            </div>
+
+            <footer style="margin-top: 100px; font-family: var(--font-code); opacity: 0.5;">
+                &copy; 2025 LAVKESH SINGH. SYSTEM VERSION 9.0
+            </footer>
+        </section>
+
+    </main>
+
+    <!-- LIBRARIES -->
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis (Smooth Scroll) -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Vanilla Tilt -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+
+    <script>
+        /* 
+        ================================================================
+           ADDED: LOADER LOGIC
+        ================================================================
+        */
+        const loadText = document.getElementById('load-percent');
+        const loaderLogs = document.getElementById('loader-logs');
+        let loadVal = 0;
+        const loader = document.getElementById('loader');
+
+        const bootMessages = [
+            "CONNECTING TO NEURAL NETWORK...",
+            "DECRYPTING PERSONNEL FILES...",
+            "BYPASSING KERNEL RESTRICTIONS...",
+            "SYNCHRONIZING CLOUD INFRASTRUCTURE...",
+            "INITIALIZING GEN-AI PIPELINES...",
+            "MAPPING KUBERNETES CLUSTERS...",
+            "LOADING ORACLE APEX ENGINE...",
+            "READYING AGENTIC ARCHITECTURE...",
+            "ESTABLISHING SECURE UPLINK...",
+            "SYSTEM STATUS: OPTIMAL"
+        ];
+
+        function addLog(msg) {
+            const div = document.createElement('div');
+            div.innerText = `> ${msg}`;
+            loaderLogs.prepend(div);
+            if (loaderLogs.children.length > 5) {
+                loaderLogs.lastElementChild.remove();
+            }
+        }
+
+        const interval = setInterval(() => {
+            loadVal += Math.floor(Math.random() * 5) + 1;
+            if (loadVal > 100) loadVal = 100;
+            loadText.innerText = loadVal;
+
+            // Add selective logs based on progress
+            if (loadVal % 15 === 0 || (loadVal > 95 && loadVal < 100)) {
+                const msgIndex = Math.floor((loadVal / 100) * bootMessages.length);
+                if (bootMessages[msgIndex]) addLog(bootMessages[msgIndex]);
+            }
+
+            if (loadVal === 100) {
+                clearInterval(interval);
+                addLog("ACCESS GRANTED");
+                setTimeout(() => {
+                    loader.classList.add('loader-hide');
+                    setTimeout(() => { loader.style.display = 'none'; }, 1500);
+                }, 800);
+            }
+        }, 40);
+
+        /* 
+        ================================================================
+           ADDED: LOGS TOGGLE
+        ================================================================
+        */
+        function toggleLog(element) {
+            // Close others
+            document.querySelectorAll('.log-entry').forEach(el => {
+                if (el !== element) el.classList.remove('active');
+            });
+            // Toggle current
+            element.classList.toggle('active');
+        }
+
+        /* 
+        ================================================================
+           ARCHIVES TOGGLE
+        ================================================================
+        */
+        function toggleArchives() {
+            const grid = document.getElementById('archiveGrid');
+            const btn = document.getElementById('archiveToggle');
+            grid.classList.toggle('expanded');
+            if (grid.classList.contains('expanded')) {
+                btn.textContent = '\u25bc COLLAPSE ARCHIVES';
+            } else {
+                btn.textContent = '\u25b6 EXPAND ARCHIVES';
+            }
+        }
+
+        /* 
+        ================================================================
+           1. SETUP & CURSOR LOGIC
+        ================================================================
+        */
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorCircle = document.querySelector('.cursor-circle');
+        const triggers = document.querySelectorAll('.hover-trigger');
+
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursorDot, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            gsap.to(cursorCircle, { x: e.clientX, y: e.clientY, duration: 0.3 });
+        });
+
+        triggers.forEach(trigger => {
+            trigger.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            trigger.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // Initialize smooth scrolling
+        const lenis = new Lenis();
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        /* 
+        ================================================================
+           2. THEME TOGGLE
+        ================================================================
+        */
+        const toggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        let isLight = false;
+
+        toggle.addEventListener('click', () => {
+            isLight = !isLight;
+            html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+            updateChartTheme();
+            updateThreeJSColor();
+        });
+
+        /* 
+        ================================================================
+        3. THREE.JS WARP TUNNEL BACKGROUND
+        ================================================================
+        */
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Create Stars/Particles
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 4000;
+        const posArray = new Float32Array(starsCount * 3);
+
+        for (let i = 0; i < starsCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100; // Spread wide
+        }
+
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const starsMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            color: 0x00f3ff, // Default Cyan
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+        camera.position.z = 50;
+
+        function updateThreeJSColor() {
+            const color = isLight ? 0x0051ff : 0x00f3ff;
+            starsMaterial.color.setHex(color);
+        }
+
+        // Animation Loop
+        let speed = 0.2;
+
+        function animateThree() {
+            // Move stars towards camera to create warp effect
+            const positions = starsGeometry.attributes.position.array;
+
+            for (let i = 2; i < starsCount * 3; i += 3) {
+                positions[i] += speed;
+                if (positions[i] > 50) {
+                    positions[i] = -50; // Reset to back
+                }
+            }
+            starsGeometry.attributes.position.needsUpdate = true;
+
+            // Rotate slighty
+            starField.rotation.z += 0.001;
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animateThree);
+        }
+        animateThree();
+
+        // Link Warp Speed to Scroll Velocity
+        lenis.on('scroll', (e) => {
+            speed = 0.2 + (Math.abs(e.velocity) * 0.05);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        /* 
+        ================================================================
+           4. GSAP ANIMATIONS (Horizontal Scroll & Reveal)
+        ================================================================
+        */
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Text Reveal
+        const splitText = document.querySelector('.reveal-text');
+        gsap.from(splitText, {
+            scrollTrigger: { trigger: splitText, start: "top 80%" },
+            opacity: 0, y: 50, duration: 1.5, ease: "power4.out"
+        });
+
+        // Horizontal Scroll removed for vertical layout
+
+        // Vanilla Tilt Init
+        VanillaTilt.init(document.querySelectorAll(".project-card-3d"), {
+            max: 15, speed: 400, glare: true, "max-glare": 0.2
+        });
+        VanillaTilt.init(document.querySelector(".hero-content"), { max: 5 });
+
+
+        /* 
+        ================================================================
+           5. CHART.JS SKILLS
+        ================================================================
+        */
+        const ctx = document.getElementById('skillsChart').getContext('2d');
+
+        // Initial Chart Setup
+        let skillsChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['GenAI/LLMs', 'Oracle APEX', 'OCI', 'Agent Orchestration', 'Cloud Architecture', 'DevOps & Automation'],
+                datasets: [{
+                    label: 'Skill Level',
+                    data: [92, 94, 90, 91, 93, 88],
+                    backgroundColor: 'rgba(0, 243, 255, 0.2)',
+                    borderColor: '#00f3ff',
+                    pointBackgroundColor: '#00f3ff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255,255,255,0.2)' },
+                        grid: { color: 'rgba(255,255,255,0.2)' },
+                        pointLabels: { color: '#fff', font: { size: 14, family: 'Rajdhani' } },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: { legend: { display: false } },
+                animation: { duration: 2000 }
+            }
+        });
+
+        function updateChartTheme() {
+            const color = isLight ? '#0051ff' : '#00f3ff';
+            const bg = isLight ? 'rgba(0, 81, 255, 0.2)' : 'rgba(0, 243, 255, 0.2)';
+            const grid = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)';
+            const text = isLight ? '#333' : '#fff';
+
+            skillsChart.data.datasets[0].borderColor = color;
+            skillsChart.data.datasets[0].pointBackgroundColor = color;
+            skillsChart.data.datasets[0].backgroundColor = bg;
+            skillsChart.options.scales.r.grid.color = grid;
+            skillsChart.options.scales.r.angleLines.color = grid;
+            skillsChart.options.scales.r.pointLabels.color = text;
+            skillsChart.update();
+        }
+
+        /* 
+        ================================================================
+           6. EASTER EGGS
+        ================================================================
+        */
+        // 1. Konami Code
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let kPosition = 0;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[kPosition]) {
+                kPosition++;
+                if (kPosition === konamiCode.length) {
+                    document.getElementById('god-mode').style.display = 'block';
+                    kPosition = 0;
+                }
+            } else {
+                kPosition = 0;
+            }
+        });
+
+        // 2. Logo Click Glitch
+        let clickCount = 0;
+        const logo = document.getElementById('logo-trigger');
+        logo.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 5) {
+                document.body.style.filter = 'invert(1)';
+                setTimeout(() => document.body.style.filter = 'invert(0)', 200);
+                clickCount = 0;
+            }
+        });
+
+        /* 
+        ================================================================
+           7. AUDIO SYSTEM REMOVED
+        ================================================================
+        */
+
+        /* 
+        ================================================================
+           8. MAGNETIC BUTTONS
+        ================================================================
+        */
+        document.querySelectorAll('.magnetic-btn').forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                gsap.to(btn, { x: x * 0.3, y: y * 0.3, duration: 0.3, ease: 'power2.out' });
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+            });
+        });
+
+        /* 
+        ================================================================
+           9. MODAL SYSTEM (Case Studies)
+        ================================================================
+        */
+        const modal = document.getElementById('project-modal');
+        const modalTitle = document.getElementById('m-title');
+        const modalTech = document.getElementById('m-tech');
+        const modalDesc = document.getElementById('m-desc');
+        const modalImpact = document.getElementById('m-impact');
+
+        // Project Data
+        const projectData = {
+            'AGENT FACTORY': {
+                tech: 'n8n, OpenAI, Vector DB',
+                desc: 'A centralized autonomous zone where non-technical users spawn specialized AI agents to handle enterprise workflows. The system uses a microservices architecture to isolate agent contexts.',
+                impact: '<li>Reduced L1 support tickets by 60%</li><li>Automated 4,000+ weekly man-hours</li><li>Zero-downtime deployment pipeline</li>'
+            },
+            'PREDICTIVE APEX': {
+                tech: 'Oracle APEX, PL/SQL, ML',
+                desc: 'Infused a legacy Oracle ERP with machine learning models to predict supply chain bottlenecks in real-time. Integrated Python ML models directly within the database layer.',
+                impact: '<li>95% accuracy in stockout prediction</li><li>Saved $2M in potential lost revenue</li><li>Sub-second query response times</li>'
+            },
+            'HOLO-BOT': {
+                tech: 'Oracle ODA, React, Three.js',
+                desc: 'A 3D conversational avatar for banking kiosks. Handles customer queries with natural language understanding and emotive facial expressions.',
+                impact: '<li>Increased customer engagement by 200%</li><li>Handled 50,000+ interactions in first month</li><li>Deployed across 500 kiosk locations</li>'
+            }
+        };
+
+        function openProject(title) {
+            const data = projectData[title];
+            if (!data) return;
+
+            modalTitle.innerText = title;
+            modalTech.innerText = '// STACK: ' + data.tech;
+            modalDesc.innerText = data.desc;
+            modalImpact.innerHTML = data.impact;
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeProject() {
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        // Attach click to projects
+        document.querySelectorAll('.project-card-3d').forEach(card => {
+            card.addEventListener('click', () => {
+                const title = card.querySelector('h2').innerText;
+                openProject(title);
+            });
+        });
+
+        /* 
+        ================================================================
+           10. CONTACT FORM HANDLING
+        ================================================================
+        */
+        const contactForm = document.getElementById('contactForm');
+        const submitBtn = contactForm.querySelector('button');
+
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const originalText = submitBtn.innerText;
+
+            submitBtn.innerText = 'TRANSMITTING...';
+            submitBtn.style.borderColor = 'var(--secondary-color)';
+            submitBtn.style.color = 'var(--secondary-color)';
+
+            // Simulate network request
+            setTimeout(() => {
+                submitBtn.innerText = 'UPLOAD COMPLETE';
+                submitBtn.style.borderColor = '#0f0';
+                submitBtn.style.color = '#0f0';
+
+                setTimeout(() => {
+                    contactForm.reset();
+                    submitBtn.innerText = originalText;
+                    submitBtn.style.borderColor = '';
+                    submitBtn.style.color = '';
+                }, 2000);
+            }, 1500);
+        });
+
+        /* 
+        ================================================================
+           11. TIMELINE ANIMATION
+        ================================================================
+        */
+        gsap.utils.toArray('.timeline-node').forEach((node, i) => {
+            gsap.from(node, {
+                scrollTrigger: {
+                    trigger: node,
+                    start: "top 80%",
+                },
+                opacity: 0,
+                x: i % 2 === 0 ? -50 : 50,
+                duration: 1,
+                ease: "power3.out",
+                immediateRender: false
+            });
+        });
+
+        /* 
+        ================================================================
+           12. GLITCH TITLE ENHANCEMENT
+        ================================================================
+        */
+        const glitchTitle = document.querySelector('.glitch-title');
+
+        setInterval(() => {
+            if (Math.random() > 0.9) {
+                const skew = Math.random() * 10 - 5;
+                glitchTitle.style.transform = `skewX(${skew}deg)`;
+                setTimeout(() => {
+                    glitchTitle.style.transform = 'skewX(0deg)';
+                }, 100);
+            }
+        }, 2000);
+    </script>
+</body>
+
+</html>
